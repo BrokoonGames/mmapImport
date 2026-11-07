@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>InkCanvas.Plugin.MmapImport</AssemblyName>
+    <RootNamespace>InkCanvas.Plugin.MmapImport</RootNamespace>
+    <Version>0.4.1</Version>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <!--
+    SDK 来源：ICC CE community 仓库 net6 分支源码（NuGet 包版本落后于宿主运行时 API）。
+    - 本地开发：-p:SdkRoot 指向本地的 community(net6) 检出目录
+    - CI：workflow 已自动检出 community@net6 并传入 SdkRoot
+  -->
+  <PropertyGroup>
+    <SdkRoot Condition="'$(SdkRoot)'==''">..\..\..\icc-ce-net6</SdkRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(SdkRoot)\InkCanvas.PluginSdk\InkCanvas.PluginSdk.csproj" PrivateAssets="all" />
+    <ProjectReference Include="$(SdkRoot)\InkCanvas.Controls\InkCanvas.Controls.csproj" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\manifest.json" Link="manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\icon.png" Link="icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
