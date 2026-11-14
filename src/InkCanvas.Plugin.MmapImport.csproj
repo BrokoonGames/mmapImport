@@ -7,7 +7,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>InkCanvas.Plugin.MmapImport</AssemblyName>
     <RootNamespace>InkCanvas.Plugin.MmapImport</RootNamespace>
-    <Version>0.4.1</Version>
+    <Version>0.5.1</Version>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 

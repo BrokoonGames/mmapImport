@@ -197,8 +197,8 @@ namespace InkCanvas.Plugin.MmapImport
                 if (n.Badge == null) AddBadge(n);
                 if (!_nodeLayer.Children.Contains(n.Badge)) _nodeLayer.Children.Add(n.Badge);
                 double side = n.SideRight ? 1 : -1;
-                Canvas.SetLeft(n.Badge, n.X + dx + side * (n.CardW / 2 + 15) - 13);
-                Canvas.SetTop(n.Badge, n.Y + dy - 13);
+                Canvas.SetLeft(n.Badge, n.X + dx + side * (n.CardW / 2 + 15) - 19);
+                Canvas.SetTop(n.Badge, n.Y + dy - 19);
             }
         }
 
@@ -355,28 +355,58 @@ namespace InkCanvas.Plugin.MmapImport
 
         void AddBadge(MapVM n)
         {
-            var b = new Border
+            // v0.5.0 触摸适配：外层 38×38 透明命中区（Background=null 不可命中，Transparent 可命中），
+            // 内层保持 26px 视觉圆不变。鸿合等触摸屏点击容差小，纯 26px 圆点极易点空。
+            var hit = new Border
             {
-                Width = 26,
-                Height = 26,
-                CornerRadius = new CornerRadius(13),
-                Background = BadgeBrush,
-                Child = new System.Windows.Controls.TextBlock
+                Width = 38,
+                Height = 38,
+                Background = Brushes.Transparent,
+                Child = new Border
                 {
-                    Text = n.Open ? "−" : "+",
-                    Foreground = Brushes.White,
-                    FontSize = 16,
-                    FontWeight = FontWeights.Bold,
-                    TextAlignment = TextAlignment.Center,
+                    Width = 26,
+                    Height = 26,
+                    CornerRadius = new CornerRadius(13),
+                    Background = BadgeBrush,
+                    Child = new System.Windows.Controls.TextBlock
+                    {
+                        Text = n.Open ? "−" : "+",
+                        Foreground = Brushes.White,
+                        FontSize = 16,
+                        FontWeight = FontWeights.Bold,
+                        TextAlignment = TextAlignment.Center,
+                    },
                 },
                 Cursor = Cursors.Hand,
-                ToolTip = n.Open ? "收起分支" : $"展开 {n.Children.Count} 个子主题",
+                ToolTip = (n.Open ? "收起分支" : $"展开 {n.Children.Count} 个子主题") + "（也可按 Alt+Shift+E/C）",
             };
             var target = n;
-            b.MouseLeftButtonDown += (s, e) => { e.Handled = true; target.Open = !target.Open; Relayout(); };
-            n.Badge = b;
-            Panel.SetZIndex(b, 2);
-            _nodeLayer.Children.Add(b);
+            var lastTap = DateTime.MinValue;
+            void Toggle()
+            {
+                // 触摸事件与提升出的鼠标事件可能连发，350ms 内只算一次
+                if ((DateTime.Now - lastTap).TotalMilliseconds < 350) return;
+                lastTap = DateTime.Now;
+                target.Open = !target.Open;
+                Relayout();
+            }
+            // v0.5.0 多模态输入：预览（隧道）阶段截获，先于宿主画布的墨迹/拖拽处理。
+            // 修复鸿合触摸屏：触摸走 Stylus/Touch 事件，宿主当墨迹处理后不再提升为
+            // MouseLeftButtonDown —— 原版只挂鼠标事件因此点不动。
+            hit.PreviewMouseLeftButtonDown += (s, e) => { e.Handled = true; Toggle(); };
+            hit.PreviewStylusDown += (s, e) => { e.Handled = true; Toggle(); };
+            hit.PreviewTouchDown += (s, e) => { e.Handled = true; Toggle(); };
+            n.Badge = hit;
+            Panel.SetZIndex(hit, 2);
+            _nodeLayer.Children.Add(hit);
+        }
+
+        /// <summary>全部展开/收起（热键 Alt+Shift+E / Alt+Shift+C 调用；中心根节点恒开）。</summary>
+        public void SetAllExpanded(bool open)
+        {
+            foreach (var n in _root.Walk())
+                if (!ReferenceEquals(n, _root)) n.Open = open;
+            Relayout();
         }
 
         static Brush BrushFromArgb(string argb)
